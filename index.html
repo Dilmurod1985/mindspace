@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindSpace — Мой дневник</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/mindspace/favicon.ico" type="image/x-icon">
+</head>
+<body class="dark-theme">
+    <div class="container">
+        <header>
+            <div class="logo">
+                <span class="emoji">🧠</span>
+                <h1>MindSpace</h1>
+            </div>
+            <p>Твое пространство для глубоких мыслей</p>
+        </header>
+
+        <form id="diary-form">
+            <input type="text" id="title" placeholder="Заголовок записи..." required>
+            <select id="mood">
+                <option value="Радостное">Радостное настроение</option>
+                <option value="Спокойное">Спокойное настроение</option>
+                <option value="Грустное">Грустное настроение</option>
+                <option value="Тревожное">Тревожное настроение</option>
+            </select>
+            <textarea id="content" placeholder="О чем ты думаешь сегодня?" required></textarea>
+            <button type="submit">Записать в историю</button>
+        </form>
+
+        <div id="history-container" class="history-list"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
