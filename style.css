@@ -27,3 +27,8 @@ button { background: #4ecca3; color: white; padding: 10px; border: none; cursor:
     margin-left: 10px;
 }
 .delete-btn:hover { background: #c0392b; }
+/* Цвета для разных настроений */
+.mood-joy { border-left: 8px solid #f1c40f; }      /* Желтый для радости */
+.mood-sadness { border-left: 8px solid #3498db; }  /* Синий для грусти */
+.mood-neutral { border-left: 8px solid #95a5a6; }  /* Серый для обычного */
+.mood-focus { border-left: 8px solid #9b59b6; }    /* Фиолетовый для фокуса */

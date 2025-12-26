@@ -8,22 +8,26 @@ async function loadHistory() {
         const container = document.getElementById('history-container');
         container.innerHTML = ''; // Очищаем перед обновлением
 
-        posts.forEach(post => {
-            const card = document.createElement('div');
-            card.className = 'history-item';
-            card.innerHTML = `
-                <h3>${post.title}</h3>
-                <small>${post.mood} • ${new Date(post.createdAt).toLocaleDateString()}</small>
-                <p>${post.content}</p>
-            `;
-            card.innerHTML = `
-    <h3>${post.title}</h3>
-    <small>${post.mood} • ${new Date(post.createdAt).toLocaleDateString()}</small>
-    <p>${post.content}</p>
-    <button class="delete-btn" onclick="deletePost('${post._id}')">🗑️</button> 
-`;
-            container.appendChild(card);
-        });
+       posts.forEach(post => {
+    const card = document.createElement('div');
+    card.className = 'history-item';
+
+    // Добавляем цветовой класс
+    if (post.mood.includes('Радостное')) card.classList.add('mood-joy');
+    else if (post.mood.includes('Грустное')) card.classList.add('mood-sadness');
+    else if (post.mood.includes('Обычное')) card.classList.add('mood-neutral');
+    else card.classList.add('mood-focus');
+
+    card.innerHTML = `
+        <div class="item-text">
+            <h3>${post.title}</h3>
+            <small>${post.mood} • ${new Date(post.createdAt).toLocaleDateString()}</small>
+            <p>${post.content}</p>
+        </div>
+        <button class="delete-btn" onclick="deletePost('${post._id}')">🗑️</button>
+    `;
+    container.appendChild(card);
+});
     } catch (err) {
         console.error('Ошибка загрузки данных:', err);
     }
