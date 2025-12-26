@@ -16,6 +16,12 @@ async function loadHistory() {
                 <small>${post.mood} • ${new Date(post.createdAt).toLocaleDateString()}</small>
                 <p>${post.content}</p>
             `;
+            card.innerHTML = `
+    <h3>${post.title}</h3>
+    <small>${post.mood} • ${new Date(post.createdAt).toLocaleDateString()}</small>
+    <p>${post.content}</p>
+    <button class="delete-btn" onclick="deletePost('${post._id}')">🗑️</button> 
+`;
             container.appendChild(card);
         });
     } catch (err) {
