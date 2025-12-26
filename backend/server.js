@@ -45,5 +45,5 @@ app.delete('/api/posts/:id', async (req, res) => {
         res.status(500).json({ error: 'Ошибка при удалении' });
     }
 });
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Сервер MindSpace на порту ${PORT}`));
