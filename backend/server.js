@@ -36,6 +36,14 @@ app.post('/api/posts', async (req, res) => {
   await newPost.save();
   res.json(newPost);
 });
-
+// Маршрут для удаления записи по ID
+app.delete('/api/posts/:id', async (req, res) => {
+    try {
+        await Post.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Запись удалена' });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка при удалении' });
+    }
+});
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Сервер MindSpace на порту ${PORT}`));
