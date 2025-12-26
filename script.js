@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api/posts';
+const API_URL = 'https://mindspace-n6jh.onrender.com/api/posts';
 
 // Функция для загрузки записей из MongoDB
 async function loadHistory() {
