@@ -138,6 +138,66 @@ form.addEventListener('submit', (e) => {
         addEntry(title, content, mood);
     }
 });
+// Уведомления: запрос разрешения при загрузке
+async function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('Разрешение на уведомления получено');
+        }
+    }
+}
 
+// Показать уведомление
+function showNotification(title, body = '') {
+    if (Notification.permission === 'granted') {
+        new Notification(title, {
+            body: body,
+            icon: '/icons/icon-192.png',  // твоя иконка с мозгом
+            badge: '/icons/icon-192.png'
+        });
+    }
+}
+
+// Вызываем при загрузке
+requestNotificationPermission();
+function scheduleDailyReminder() {
+    const now = new Date();
+    const reminderTime = new Date();
+    reminderTime.setHours(20, 0, 0, 0);  // 20:00
+
+    if (now > reminderTime) {
+        reminderTime.setDate(reminderTime.getDate() + 1);  // если уже прошло — на завтра
+    }
+
+    const delay = reminderTime - now;
+
+    setTimeout(() => {
+        // Проверяем, была ли запись сегодня
+        checkIfEntryToday().then(hasEntry => {
+            if (!hasEntry) {
+                showNotification('Пора в MindSpace! 🧠', 'Как прошёл твой день? Зафиксируй мысли прямо сейчас.');
+            }
+        });
+        scheduleDailyReminder();  // планируем следующее
+    }, delay);
+}
+
+// Проверка, была ли запись сегодня (запрос к API)
+async function checkIfEntryToday() {
+    try {
+        const response = await fetch(API_URL);
+        const entries = await response.json();
+        const today = new Date().toISOString().split('T')[0];
+        return entries.some(entry => entry.date.startsWith(today));
+    } catch {
+        return false;
+    }
+}
+
+// Запускаем напоминание при загрузке страницы
+if (Notification.permission === 'granted') {
+    scheduleDailyReminder();
+}
 // Загружаем записи при открытии страницы
 loadHistory();
