@@ -117,3 +117,26 @@ if (localUpload) {
         }
     });
 }
+const remoteUrlInput = document.getElementById('remote-url');
+
+if (remoteUrlInput && audio) {
+    remoteUrlInput.addEventListener('change', (e) => {
+        const url = e.target.value.trim();
+        if (url) {
+            audio.src = url;
+            audio.play()
+                .then(() => {
+                    musicBtn.innerText = '⏸️ Пауза';
+                    musicBtn.classList.add('pulse-animation');
+                    
+                    // Добавляем в список, чтобы можно было вернуться
+                    const option = document.createElement('option');
+                    option.text = "🌐 Ссылка из сети";
+                    option.value = url;
+                    soundSelect.add(option, soundSelect.firstChild);
+                    soundSelect.selectedIndex = 0;
+                })
+                .catch(err => alert("Не удалось загрузить музыку по этой ссылке. Убедитесь, что это прямой путь к .mp3"));
+        }
+    });
+}
