@@ -1,6 +1,5 @@
 const API_URL = 'https://mindspace-n6jh.onrender.com/api/posts';
 
-// Функция для загрузки записей
 async function loadHistory() {
     try {
         const response = await fetch(API_URL);
@@ -12,11 +11,11 @@ async function loadHistory() {
             const card = document.createElement('div');
             card.className = 'history-item';
 
-            // Логика выбора цвета по тексту настроения
+            // Присвоение класса в зависимости от выбранного настроения
             if (post.mood.includes('Радостное')) card.classList.add('mood-joy');
             else if (post.mood.includes('Грустное')) card.classList.add('mood-sadness');
             else if (post.mood.includes('Обычное')) card.classList.add('mood-neutral');
-            else card.classList.add('mood-focus'); // Для "Спокойного"
+            else card.classList.add('mood-focus'); 
 
             card.innerHTML = `
                 <div class="item-text">
@@ -33,7 +32,6 @@ async function loadHistory() {
     }
 }
 
-// Функция удаления
 async function deletePost(id) {
     if (confirm('Удалить эту запись?')) {
         try {
@@ -45,7 +43,6 @@ async function deletePost(id) {
     }
 }
 
-// Сохранение новой записи
 document.getElementById('diary-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = {
@@ -67,5 +64,4 @@ document.getElementById('diary-form').addEventListener('submit', async (e) => {
     }
 });
 
-// Запуск при загрузке страницы
 loadHistory();
