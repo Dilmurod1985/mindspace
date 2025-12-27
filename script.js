@@ -39,7 +39,7 @@ async function loadHistory() {
             item.innerHTML = `
                 <div>
                     <h3>${escapeHtml(entry.title)}</h3>
-                    <p class="date">${formatDate(entry.date)}</p>
+                    <p class="date">${formatDate(entry.createdAt || entry.date)}</p>
                     <p>${escapeHtml(entry.content).replace(/\n/g, '<br>')}</p>
                 </div>
                 <button class="delete-btn" data-id="${entry._id}" title="Удалить запись">✕</button>
@@ -135,7 +135,14 @@ function escapeHtml(text) {
 }
 
 function formatDate(isoString) {
+    // Если дата undefined или пустая — возвращаем "Дата неизвестна"
+    if (!isoString) return "Дата неизвестна";
+
     const date = new Date(isoString);
+    
+    // Проверка на валидность даты
+    if (isNaN(date.getTime())) return "Invalid Date";
+
     const options = { 
         day: 'numeric', 
         month: 'long', 
@@ -143,6 +150,7 @@ function formatDate(isoString) {
         hour: '2-digit', 
         minute: '2-digit' 
     };
+    
     return date.toLocaleDateString('ru-RU', options);
 }
 
