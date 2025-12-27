@@ -59,5 +59,17 @@ document.getElementById('diary-form').addEventListener('submit', async (e) => {
     e.target.reset();
     loadHistory();
 });
+const audio = document.getElementById('bg-audio');
+const musicBtn = document.getElementById('music-btn');
+
+musicBtn.addEventListener('click', () => {
+    if (audio.paused) {
+        audio.play();
+        musicBtn.innerText = '⏸️ Пауза';
+    } else {
+        audio.pause();
+        musicBtn.innerText = '🎵 Играть музыку';
+    }
+});
 
 loadHistory();
