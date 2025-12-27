@@ -71,5 +71,16 @@ musicBtn.addEventListener('click', () => {
         musicBtn.innerText = '🎵 Играть музыку';
     }
 });
+musicBtn.addEventListener('click', () => {
+    if (audio.paused) {
+        audio.play();
+        musicBtn.innerText = '⏸️ Пауза';
+        musicBtn.classList.add('pulse-animation'); // Включаем анимацию
+    } else {
+        audio.pause();
+        musicBtn.innerText = '🎵 Играть музыку';
+        musicBtn.classList.remove('pulse-animation'); // Выключаем анимацию
+    }
+});
 
 loadHistory();
