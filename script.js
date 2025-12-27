@@ -62,25 +62,18 @@ document.getElementById('diary-form').addEventListener('submit', async (e) => {
 const audio = document.getElementById('bg-audio');
 const musicBtn = document.getElementById('music-btn');
 
-musicBtn.addEventListener('click', () => {
-    if (audio.paused) {
-        audio.play();
-        musicBtn.innerText = '⏸️ Пауза';
-    } else {
-        audio.pause();
-        musicBtn.innerText = '🎵 Играть музыку';
-    }
-});
-musicBtn.addEventListener('click', () => {
-    if (audio.paused) {
-        audio.play();
-        musicBtn.innerText = '⏸️ Пауза';
-        musicBtn.classList.add('pulse-animation'); // Включаем анимацию
-    } else {
-        audio.pause();
-        musicBtn.innerText = '🎵 Играть музыку';
-        musicBtn.classList.remove('pulse-animation'); // Выключаем анимацию
-    }
-});
+if (musicBtn && audio) {
+    musicBtn.addEventListener('click', () => {
+        if (audio.paused) {
+            audio.play();
+            musicBtn.innerText = '⏸️ Пауза';
+            musicBtn.classList.add('pulse-animation');
+        } else {
+            audio.pause();
+            musicBtn.innerText = '🎵 Играть музыку';
+            musicBtn.classList.remove('pulse-animation');
+        }
+    });
+}
 
-loadHistory();
+loadHistory(); // Это должно быть в самом низу
