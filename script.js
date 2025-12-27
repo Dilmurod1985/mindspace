@@ -93,3 +93,27 @@ if (musicBtn && audio) {
         }
     });
 }
+const localUpload = document.getElementById('local-upload');
+
+if (localUpload) {
+    localUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Создаем временную ссылку на файл в твоей памяти
+            const url = URL.createObjectURL(file);
+            audio.src = url;
+            
+            // Сразу запускаем воспроизведение
+            audio.play();
+            musicBtn.innerText = '⏸️ Пауза';
+            musicBtn.classList.add('pulse-animation');
+            
+            // Меняем текст в селекторе, чтобы было понятно, что играет свой файл
+            const option = document.createElement('option');
+            option.text = "🎵 " + file.name;
+            option.value = url;
+            soundSelect.add(option, soundSelect.firstChild);
+            soundSelect.selectedIndex = 0;
+        }
+    });
+}

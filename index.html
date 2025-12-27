@@ -26,16 +26,21 @@
         <div id="history-container">
             </div>
     </div>
-    <div class="music-player" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 15px; display: flex; flex-direction: column; gap: 10px;">
-    <select id="sound-select" style="padding: 5px; border-radius: 5px; cursor: pointer;">
-        <option value="https://www.bensound.com/bensound-music/bensound-slowmotion.mp3">🎹 Спокойная музыка</option>
-        <option value="https://www.soundjay.com/nature/rain-01.mp3">🌧️ Шум дождя</option>
+   <div class="music-player" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 15px; display: flex; flex-direction: column; gap: 10px; width: 200px; color: white;">
+    <label style="font-size: 12px; cursor: pointer; background: #333; padding: 5px; border-radius: 5px; text-align: center;">
+        📁 Своя музыка
+        <input type="file" id="local-upload" accept="audio/*" style="display: none;">
+    </label>
+
+    <select id="sound-select" style="padding: 5px; border-radius: 5px; cursor: pointer; background: #222; color: white; border: 1px solid #444;">
+        <option value="https://www.bensound.com/bensound-music/bensound-slowmotion.mp3">🎹 Музыка</option>
+        <option value="https://www.soundjay.com/nature/rain-01.mp3">🌧️ Дождь</option>
         <option value="https://www.soundjay.com/nature/fire-1.mp3">🔥 Костер</option>
     </select>
     
     <div style="display: flex; align-items: center; gap: 10px;">
         <button id="music-btn" class="music-btn-style" style="flex: 1;">🎵 Играть</button>
-        <input type="range" id="volume-control" min="0" max="1" step="0.1" value="0.5" style="width: 80px; cursor: pointer;">
+        <input type="range" id="volume-control" min="0" max="1" step="0.1" value="0.5" style="width: 60px; cursor: pointer;">
     </div>
 
     <audio id="bg-audio" loop></audio>
