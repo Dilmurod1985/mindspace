@@ -39,7 +39,7 @@ async function loadHistory() {
             item.innerHTML = `
                 <div>
                     <h3>${escapeHtml(entry.title)}</h3>
-                    <p class="date">${formatDate(entry.createdAt || entry.date)}</p>
+                    <p class="date">${formatDate(entry.createdAt || entry.date || new Date())}</p>
                     <p>${escapeHtml(entry.content).replace(/\n/g, '<br>')}</p>
                 </div>
                 <button class="delete-btn" data-id="${entry._id}" title="Удалить запись">✕</button>
