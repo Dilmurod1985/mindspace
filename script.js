@@ -61,8 +61,26 @@ document.getElementById('diary-form').addEventListener('submit', async (e) => {
 });
 const audio = document.getElementById('bg-audio');
 const musicBtn = document.getElementById('music-btn');
+const soundSelect = document.getElementById('sound-select');
+const volumeControl = document.getElementById('volume-control');
 
 if (musicBtn && audio) {
+    // Установка начального трека
+    audio.src = soundSelect.value;
+    audio.volume = volumeControl.value;
+
+    // Смена трека
+    soundSelect.addEventListener('change', () => {
+        audio.src = soundSelect.value;
+        if (!audio.paused) audio.play();
+    });
+
+    // Регулировка громкости
+    volumeControl.addEventListener('input', (e) => {
+        audio.volume = e.target.value;
+    });
+
+    // Play/Pause
     musicBtn.addEventListener('click', () => {
         if (audio.paused) {
             audio.play();
@@ -70,10 +88,8 @@ if (musicBtn && audio) {
             musicBtn.classList.add('pulse-animation');
         } else {
             audio.pause();
-            musicBtn.innerText = '🎵 Играть музыку';
+            musicBtn.innerText = '🎵 Играть';
             musicBtn.classList.remove('pulse-animation');
         }
     });
 }
-
-loadHistory(); // Это должно быть в самом низу
