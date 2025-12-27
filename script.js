@@ -85,6 +85,26 @@ async function addEntry(title, content, mood) {
         alert('Не удалось сохранить запись. Проверь интернет или попробуй позже.');
     }
 }
+// Ежедневное напоминание в 20:00 (даже если сайт закрыт — через push)
+function scheduleDailyPush() {
+  const now = new Date();
+  const target = new Date();
+  target.setHours(20, 0, 0, 0);
+
+  if (now > target) target.setDate(target.getDate() + 1);
+
+  const delayMs = target - now;
+
+  setTimeout(() => {
+    // Здесь можно отправить push через бэкенд, но для простоты — локальное уведомление
+    if (Notification.permission === 'granted') {
+      showNotification('MindSpace', 'Не забудь записать мысли сегодня! 🧠');
+    }
+    scheduleDailyPush(); // на завтра
+  }, delayMs);
+}
+
+scheduleDailyPush();
 
 // Удаление записи по _id
 async function deleteEntry(event) {
@@ -198,6 +218,17 @@ async function checkIfEntryToday() {
 // Запускаем напоминание при загрузке страницы
 if (Notification.permission === 'granted') {
     scheduleDailyReminder();
+}// Регистрация Service Worker для PWA и push-уведомлений
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => {
+        console.log('Service Worker зарегистрирован:', reg.scope);
+      })
+      .catch(err => {
+        console.log('Ошибка регистрации SW:', err);
+      });
+  });
 }
 // Загружаем записи при открытии страницы
 loadHistory();
