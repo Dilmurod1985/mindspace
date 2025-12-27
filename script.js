@@ -1,67 +1,143 @@
-const API_URL = 'https://mindspace-n6jh.onrender.com/api/posts';
+// script.js
 
+const API_URL = 'https://mindspace-n6jh.onrender.com/api/posts';
+const form = document.getElementById('diary-form');
+const historyContainer = document.getElementById('history-container');
+
+// Сопоставление настроения из формы с классами CSS
+const moodMap = {
+    'Радостное': 'joy',       // жёлтый
+    'Спокойное': 'focus',     // зелёный
+    'Грустное': 'sadness',    // синий
+    'Тревожное': 'neutral'    // серый (можно потом заменить на отдельный цвет)
+};
+
+// Загрузка всех записей с сервера
 async function loadHistory() {
+    historyContainer.innerHTML = '<p>Загрузка записей...</p>';
+    
     try {
         const response = await fetch(API_URL);
-        const posts = await response.json();
-        const container = document.getElementById('history-container');
-        container.innerHTML = ''; 
+        if (!response.ok) throw new Error('Не удалось загрузить записи');
 
-        posts.forEach(post => {
-            const card = document.createElement('div');
-            card.className = 'history-item';
+        let entries = await response.json();
 
-            // Присвоение класса в зависимости от выбранного настроения
-            if (post.mood.includes('Радостное')) card.classList.add('mood-joy');
-            else if (post.mood.includes('Грустное')) card.classList.add('mood-sadness');
-            else if (post.mood.includes('Обычное')) card.classList.add('mood-neutral');
-            else card.classList.add('mood-focus'); 
+        // Сортируем по дате (от новых к старым)
+        entries.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            card.innerHTML = `
-                <div class="item-text">
-                    <h3>${post.title}</h3>
-                    <small>${post.mood} • ${new Date(post.createdAt).toLocaleDateString()}</small>
-                    <p>${post.content}</p>
-                </div>
-                <button class="delete-btn" onclick="deletePost('${post._id}')">🗑️</button>
-            `;
-            container.appendChild(card);
-        });
-    } catch (err) {
-        console.error('Ошибка загрузки данных:', err);
-    }
-}
+        historyContainer.innerHTML = '';
 
-async function deletePost(id) {
-    if (confirm('Удалить эту запись?')) {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            loadHistory();
-        } catch (err) {
-            console.error('Ошибка при удалении:', err);
+        if (entries.length === 0) {
+            historyContainer.innerHTML = '<p>Пока нет записей. Создай первую! 🌱</p>';
+            return;
         }
+
+        entries.forEach(entry => {
+            const item = document.createElement('div');
+            item.classList.add('history-item', `mood-${moodMap[entry.mood] || 'neutral'}`);
+
+            item.innerHTML = `
+                <div>
+                    <h3>${escapeHtml(entry.title)}</h3>
+                    <p class="date">${formatDate(entry.date)}</p>
+                    <p>${escapeHtml(entry.content).replace(/\n/g, '<br>')}</p>
+                </div>
+                <button class="delete-btn" data-id="${entry._id}" title="Удалить запись">✕</button>
+            `;
+
+            historyContainer.appendChild(item);
+        });
+
+        // Обработчики на кнопки удаления
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', deleteEntry);
+        });
+
+    } catch (error) {
+        console.error(error);
+        historyContainer.innerHTML = '<p style="color: #e94560;">Ошибка загрузки записей 😔</p>';
     }
 }
 
-document.getElementById('diary-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const data = {
-        title: document.getElementById('title').value,
-        mood: document.getElementById('mood').value,
-        content: document.getElementById('content').value
-    };
+// Добавление новой записи
+async function addEntry(title, content, mood) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title,
+                content,
+                mood,           // отправляем текст настроения (Радостное и т.д.)
+                date: new Date().toISOString()
+            })
+        });
+
+        if (!response.ok) throw new Error('Не удалось сохранить запись');
+
+        form.reset();
+        loadHistory(); // обновляем список
+
+    } catch (error) {
+        console.error(error);
+        alert('Не удалось сохранить запись. Проверь интернет или попробуй позже.');
+    }
+}
+
+// Удаление записи по _id
+async function deleteEntry(event) {
+    const id = event.target.dataset.id;
+
+    if (!confirm('Ты уверен, что хочешь удалить эту запись?')) return;
 
     try {
-        await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE'
         });
-        e.target.reset();
-        loadHistory();
-    } catch (err) {
-        console.error('Ошибка при сохранении:', err);
+
+        if (!response.ok) throw new Error('Не удалось удалить');
+
+        loadHistory(); // обновляем список
+
+    } catch (error) {
+        console.error(error);
+        alert('Ошибка при удалении записи.');
+    }
+}
+
+// Утилиты
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(isoString) {
+    const date = new Date(isoString);
+    const options = { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    };
+    return date.toLocaleDateString('ru-RU', options);
+}
+
+// Обработка формы
+form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById('title').value.trim();
+    const content = document.getElementById('content').value.trim();
+    const mood = document.getElementById('mood').value;
+
+    if (title && content) {
+        addEntry(title, content, mood);
     }
 });
 
+// Загружаем записи при открытии страницы
 loadHistory();
