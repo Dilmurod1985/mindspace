@@ -22,7 +22,7 @@ async function loadHistory() {
             else if (post.mood.includes('Обычное')) card.classList.add('mood-neutral');
             else card.classList.add('mood-focus'); 
 
-            // Исправление "Invalid Date": проверяем наличие даты
+            // Форматирование даты: если сервер прислал дату, показываем её, иначе "Сегодня"
             const dateDisplay = post.createdAt 
                 ? new Date(post.createdAt).toLocaleDateString('ru-RU') 
                 : 'Сегодня';
@@ -48,7 +48,7 @@ async function deletePost(id) {
         try {
             const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                loadHistory(); // Обновляем список после удаления
+                loadHistory(); 
             }
         } catch (err) {
             console.error('Ошибка при удалении:', err);
@@ -76,8 +76,8 @@ if (diaryForm) {
             });
 
             if (response.ok) {
-                e.target.reset(); // Очистить поля формы
-                loadHistory();    // Загрузить обновленную историю
+                e.target.reset(); 
+                loadHistory();    
             }
         } catch (err) {
             console.error('Ошибка при сохранении:', err);
