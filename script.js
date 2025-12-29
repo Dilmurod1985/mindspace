@@ -145,31 +145,51 @@ if (diaryForm) {
 const downloadBtn = document.getElementById('download-btn');
 
 if (downloadBtn) {
-    downloadBtn.addEventListener('click', async () => {
+    downloadBtn.addEventListener('click', async (e) => {
+        e.preventDefault(); // Останавливаем перезагрузку страницы
+        
+        // Меняем текст кнопки, чтобы было видно, что процесс пошел
+        const originalText = downloadBtn.innerText;
+        downloadBtn.innerText = "⌛ Загрузка...";
+        downloadBtn.disabled = true;
+
         try {
             const response = await fetch(API_URL);
             const posts = await response.json();
             
-            let content = "МОЙ ДНЕВНИК MINDSPACE\n";
-            content += "==========================\n\n";
-            
-            posts.forEach(post => {
+            if (!posts || posts.length === 0) {
+                alert("Дневник пуст. Напиши что-нибудь сначала!");
+                return;
+            }
+
+            let content = "--- МОЙ ДНЕВНИК MINDSPACE ---\n\n";
+            posts.forEach((post, index) => {
+                content += `Запись #${index + 1}\n`;
                 content += `Дата: ${new Date(post.createdAt).toLocaleString()}\n`;
                 content += `Заголовок: ${post.title}\n`;
                 content += `Настроение: ${post.mood}\n`;
                 content += `Текст: ${post.content}\n`;
-                content += "--------------------------\n\n";
+                content += `------------------------------\n\n`;
             });
 
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'my_diary.txt';
-            a.click();
-            URL.revokeObjectURL(url);
+            // Создаем невидимую ссылку для скачивания
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'diary_backup.txt';
+            
+            // Обязательно добавляем в документ для некоторых браузеров
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log("Файл должен был скачаться");
         } catch (error) {
-            alert("Не удалось скачать записи");
+            console.error("Ошибка:", error);
+            alert("Ошибка сервера. Попробуй позже.");
+        } finally {
+            downloadBtn.innerText = originalText;
+            downloadBtn.disabled = false;
         }
     });
 }
