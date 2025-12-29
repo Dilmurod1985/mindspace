@@ -16,21 +16,29 @@ async function loadHistory() {
         const posts = await response.json();
         const historyContainer = document.getElementById('history-container');
         
-        // Проверка: есть ли контейнер на странице (исправляет ошибку со скриншота)
         if (!historyContainer) return; 
 
         historyContainer.innerHTML = '';
 
         posts.forEach(post => {
+            // Определяем цвет боковой полоски в зависимости от настроения
+            let moodColor = '#4ecca3'; // По умолчанию зеленый
+            if (post.mood === 'Грустное') moodColor = '#ff4b5c';
+            if (post.mood === 'Спокойное') moodColor = '#4592af';
+            if (post.mood === 'Радостное') moodColor = '#f9d342';
+
             const card = document.createElement('div');
             card.className = 'history-card';
+            // Добавляем стиль бордера прямо здесь, чтобы вернуть цвет настроения
+            card.style.borderLeft = `10px solid ${moodColor}`;
+            
             card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <h3 style="margin: 0; color: #4ecca3;">${post.title}</h3>
+                    <h3 style="margin: 0; color: white;">${post.title}</h3> 
                     <button onclick="deletePost('${post._id}')" style="background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button>
                 </div>
-                <p style="font-size: 0.8em; color: #888;">${post.mood} • ${new Date(post.createdAt).toLocaleString()}</p>
-                <p>${post.content}</p>
+                <p style="font-size: 0.8em; color: #888; margin: 5px 0;">${post.mood} • ${new Date(post.createdAt).toLocaleString()}</p>
+                <p style="margin-top: 10px;">${post.content}</p>
             `;
             historyContainer.appendChild(card);
         });
