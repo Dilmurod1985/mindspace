@@ -142,6 +142,37 @@ if (diaryForm) {
         loadHistory();
     });
 }
+const downloadBtn = document.getElementById('download-btn');
+
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch(API_URL);
+            const posts = await response.json();
+            
+            let content = "МОЙ ДНЕВНИК MINDSPACE\n";
+            content += "==========================\n\n";
+            
+            posts.forEach(post => {
+                content += `Дата: ${new Date(post.createdAt).toLocaleString()}\n`;
+                content += `Заголовок: ${post.title}\n`;
+                content += `Настроение: ${post.mood}\n`;
+                content += `Текст: ${post.content}\n`;
+                content += "--------------------------\n\n";
+            });
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'my_diary.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            alert("Не удалось скачать записи");
+        }
+    });
+}
 
 // Запуск истории при загрузке страницы
 loadHistory();
