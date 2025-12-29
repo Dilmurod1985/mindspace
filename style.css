@@ -90,3 +90,14 @@ button {
         box-shadow: 0 0 0 0 rgba(78, 204, 163, 0);
     }
 }
+/* Эффект при наведении на карточку истории */
+.history-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Плавность анимации */
+    cursor: default;
+}
+
+.history-card:hover {
+    transform: translateY(-5px); /* Карточка приподнимается вверх */
+    box-shadow: 0 10px 20px rgba(78, 204, 163, 0.2); /* Появляется мягкая тень */
+    background-color: #2c2c2c; /* Слегка меняем фон для акцента */
+}
