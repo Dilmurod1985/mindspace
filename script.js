@@ -1,142 +1,200 @@
-const API_URL = 'https://mindspace-n6jh.onrender.com/api/posts';
+// script.js — основной скрипт MindSpace (обновлённая версия 2025)
 
+const API_URL = '/api/posts'; // Для Vercel serverless API
+
+const titleInput = document.getElementById('title');
+const moodSelect = document.getElementById('mood');
+const contentInput = document.getElementById('content');
+const addBtn = document.getElementById('add-btn');
+const historyList = document.getElementById('history-list');
+
+let entries = [];
+
+// Безопасный вывод текста (защита от XSS)
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Надёжное форматирование даты (работает с createdAt и старым date)
+function formatDate(isoString) {
+    if (!isoString) return '';
+
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
+
+    const options = {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+
+    return date.toLocaleDateString('ru-RU', options);
+}
+
+// Загрузка записей с сервера
 async function loadHistory() {
+    historyList.innerHTML = '<p>Загрузка...</p>';
     try {
         const response = await fetch(API_URL);
-        const posts = await response.json();
-        const container = document.getElementById('history-container');
-        if (!container) return;
-        container.innerHTML = ''; 
+        if (!response.ok) throw new Error('Ошибка сети');
+        entries = await response.json();
 
-        // Новые записи будут в самом верху
-        posts.reverse().forEach(post => {
-            const card = document.createElement('div');
-            card.className = 'history-item';
+        if (entries.length === 0) {
+            historyList.innerHTML = '<p>Пока нет записей. Начни прямо сейчас!</p>';
+            return;
+        }
 
-            if (post.mood.includes('Радостное')) card.classList.add('mood-joy');
-            else if (post.mood.includes('Грустное')) card.classList.add('mood-sadness');
-            else if (post.mood.includes('Обычное')) card.classList.add('mood-neutral');
-            else card.classList.add('mood-focus'); 
-
-            const dateDisplay = post.createdAt 
-                ? new Date(post.createdAt).toLocaleDateString('ru-RU') 
-                : 'Сегодня';
-
-            card.innerHTML = `
-                <div class="item-text">
-                    <h3>${post.title || 'Без названия'}</h3>
-                    <small>${post.mood} • ${dateDisplay}</small>
-                    <p>${post.content}</p>
+        historyList.innerHTML = '';
+        entries.forEach(entry => {
+            const item = document.createElement('div');
+            item.className = 'entry-item';
+            item.innerHTML = `
+                <div class="entry-header">
+                    <h3>${escapeHtml(entry.title)}</h3>
+                    <button class="delete-btn" data-id="${entry._id}">×</button>
                 </div>
-                <button class="delete-btn" onclick="deletePost('${post._id}')">🗑️</button>
+                <p class="date">${formatDate(entry.createdAt || entry.date || '')}</p>
+                <p class="content">${escapeHtml(entry.content).replace(/\n/g, '<br>')}</p>
+                <div class="mood-indicator mood-${entry.mood.toLowerCase()}"></div>
             `;
-            container.appendChild(card);
+            historyList.appendChild(item);
         });
-    } catch (err) {
-        console.error('Ошибка:', err);
+
+        // Добавляем обработчики удаления
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', deleteEntry);
+        });
+    } catch (error) {
+        historyList.innerHTML = '<p>Ошибка загрузки. Проверь интернет.</p>';
+        console.error(error);
     }
 }
 
-async function deletePost(id) {
-    if (confirm('Удалить эту запись?')) {
-        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-        loadHistory();
-    }
-}
+// Добавление новой записи
+async function addEntry() {
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
+    const mood = moodSelect.value;
 
-document.getElementById('diary-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const data = {
-        title: document.getElementById('title').value,
-        mood: document.getElementById('mood').value,
-        content: document.getElementById('content').value
+    if (!title || !content) {
+        alert('Заполни заголовок и текст!');
+        return;
+    }
+
+    const newEntry = {
+        title,
+        content,
+        mood,
+        createdAt: new Date().toISOString()
     };
-    await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newEntry)
+        });
+
+        if (!response.ok) throw new Error('Ошибка сохранения');
+
+        const savedEntry = await response.json();
+        entries.unshift(savedEntry);
+        renderEntries();
+
+        // Очистка формы
+        titleInput.value = '';
+        contentInput.value = '';
+        moodSelect.value = 'радостное';
+
+        // Уведомление
+        showNotification('Запись сохранена! 🧠', 'Твои мысли теперь в MindSpace навсегда.');
+
+    } catch (error) {
+        alert('Не удалось сохранить. Проверь интернет.');
+        console.error(error);
+    }
+}
+
+// Удаление записи
+async function deleteEntry(event) {
+    const id = event.target.dataset.id;
+    if (!id || !confirm('Удалить эту запись?')) return;
+
+    try {
+        const response = await fetch(`${API_URL}?id=${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Ошибка удаления');
+
+        entries = entries.filter(entry => entry._id !== id);
+        renderEntries();
+    } catch (error) {
+        alert('Не удалось удалить.');
+        console.error(error);
+    }
+}
+
+// Перерисовка списка (для обновления после удаления/добавления)
+function renderEntries() {
+    historyList.innerHTML = '';
+    if (entries.length === 0) {
+        historyList.innerHTML = '<p>Пока нет записей.</p>';
+        return;
+    }
+
+    entries.forEach(entry => {
+        const item = document.createElement('div');
+        item.className = 'entry-item';
+        item.innerHTML = `
+            <div class="entry-header">
+                <h3>${escapeHtml(entry.title)}</h3>
+                <button class="delete-btn" data-id="${entry._id}">×</button>
+            </div>
+            <p class="date">${formatDate(entry.createdAt || entry.date || '')}</p>
+            <p class="content">${escapeHtml(entry.content).replace(/\n/g, '<br>')}</p>
+            <div class="mood-indicator mood-${entry.mood.toLowerCase()}"></div>
+        `;
+        historyList.appendChild(item);
     });
-    e.target.reset();
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', deleteEntry);
+    });
+}
+
+// Уведомления
+function showNotification(title, body = '') {
+    if (Notification.permission === 'granted') {
+        new Notification(title, {
+            body,
+            icon: '/icons/icon-192.png'
+        });
+    }
+}
+
+async function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
+    }
+}
+
+// Регистрация Service Worker для PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW зарегистрирован:', reg))
+            .catch(err => console.log('SW ошибка:', err));
+    });
+}
+
+// Запуск
+document.addEventListener('DOMContentLoaded', () => {
+    requestNotificationPermission();
     loadHistory();
+    addBtn.addEventListener('click', addEntry);
 });
-const audio = document.getElementById('bg-audio');
-const musicBtn = document.getElementById('music-btn');
-const soundSelect = document.getElementById('sound-select');
-const volumeControl = document.getElementById('volume-control');
-
-if (musicBtn && audio) {
-    // Установка начального трека
-    audio.src = soundSelect.value;
-    audio.volume = volumeControl.value;
-
-    // Смена трека
-    soundSelect.addEventListener('change', () => {
-        audio.src = soundSelect.value;
-        if (!audio.paused) audio.play();
-    });
-
-    // Регулировка громкости
-    volumeControl.addEventListener('input', (e) => {
-        audio.volume = e.target.value;
-    });
-
-    // Play/Pause
-    musicBtn.addEventListener('click', () => {
-        if (audio.paused) {
-            audio.play();
-            musicBtn.innerText = '⏸️ Пауза';
-            musicBtn.classList.add('pulse-animation');
-        } else {
-            audio.pause();
-            musicBtn.innerText = '🎵 Играть';
-            musicBtn.classList.remove('pulse-animation');
-        }
-    });
-}
-const localUpload = document.getElementById('local-upload');
-
-if (localUpload) {
-    localUpload.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            // Создаем временную ссылку на файл в твоей памяти
-            const url = URL.createObjectURL(file);
-            audio.src = url;
-            
-            // Сразу запускаем воспроизведение
-            audio.play();
-            musicBtn.innerText = '⏸️ Пауза';
-            musicBtn.classList.add('pulse-animation');
-            
-            // Меняем текст в селекторе, чтобы было понятно, что играет свой файл
-            const option = document.createElement('option');
-            option.text = "🎵 " + file.name;
-            option.value = url;
-            soundSelect.add(option, soundSelect.firstChild);
-            soundSelect.selectedIndex = 0;
-        }
-    });
-}
-const remoteUrlInput = document.getElementById('remote-url');
-
-if (remoteUrlInput && audio) {
-    remoteUrlInput.addEventListener('change', (e) => {
-        const url = e.target.value.trim();
-        if (url) {
-            audio.src = url;
-            audio.play()
-                .then(() => {
-                    musicBtn.innerText = '⏸️ Пауза';
-                    musicBtn.classList.add('pulse-animation');
-                    
-                    // Добавляем в список, чтобы можно было вернуться
-                    const option = document.createElement('option');
-                    option.text = "🌐 Ссылка из сети";
-                    option.value = url;
-                    soundSelect.add(option, soundSelect.firstChild);
-                    soundSelect.selectedIndex = 0;
-                })
-                .catch(err => alert("Не удалось загрузить музыку по этой ссылке. Убедитесь, что это прямой путь к .mp3"));
-        }
-    });
-}
