@@ -1,200 +1,139 @@
-// script.js — основной скрипт MindSpace (обновлённая версия 2025)
+// 1. Константы и настройки
+const API_URL = 'https://mindspace-n6jh.onrender.com/api/posts';
 
-const API_URL = '/api/posts'; // Для Vercel serverless API
+// 2. Инициализация элементов плеера
+const audio = document.getElementById('bg-audio');
+const musicBtn = document.getElementById('music-btn');
+const soundSelect = document.getElementById('sound-select');
+const volumeControl = document.getElementById('volume-control');
+const localUpload = document.getElementById('local-upload');
+const remoteUrlInput = document.getElementById('remote-url');
 
-const titleInput = document.getElementById('title');
-const moodSelect = document.getElementById('mood');
-const contentInput = document.getElementById('content');
-const addBtn = document.getElementById('add-btn');
-const historyList = document.getElementById('history-list');
-
-let entries = [];
-
-// Безопасный вывод текста (защита от XSS)
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Надёжное форматирование даты (работает с createdAt и старым date)
-function formatDate(isoString) {
-    if (!isoString) return '';
-
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return '';
-
-    const options = {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
-
-    return date.toLocaleDateString('ru-RU', options);
-}
-
-// Загрузка записей с сервера
+// 3. Функции для работы с заметками (История)
 async function loadHistory() {
-    historyList.innerHTML = '<p>Загрузка...</p>';
     try {
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Ошибка сети');
-        entries = await response.json();
+        const posts = await response.json();
+        const historyContainer = document.getElementById('history-container');
+        
+        // Проверка: есть ли контейнер на странице (исправляет ошибку со скриншота)
+        if (!historyContainer) return; 
 
-        if (entries.length === 0) {
-            historyList.innerHTML = '<p>Пока нет записей. Начни прямо сейчас!</p>';
+        historyContainer.innerHTML = '';
+
+        posts.forEach(post => {
+            const card = document.createElement('div');
+            card.className = 'history-card';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h3 style="margin: 0; color: #4ecca3;">${post.title}</h3>
+                    <button onclick="deletePost('${post._id}')" style="background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button>
+                </div>
+                <p style="font-size: 0.8em; color: #888;">${post.mood} • ${new Date(post.createdAt).toLocaleString()}</p>
+                <p>${post.content}</p>
+            `;
+            historyContainer.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+    }
+}
+
+// Функция удаления заметки
+async function deletePost(id) {
+    if (confirm('Удалить эту запись?')) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        loadHistory();
+    }
+}
+
+// 4. Логика Плеера
+if (musicBtn && audio) {
+    
+    // Воспроизведение / Пауза
+    musicBtn.addEventListener('click', () => {
+        if (!audio.src) {
+            alert("Сначала выбери звук или вставь ссылку!");
             return;
         }
+        
+        if (audio.paused) {
+            audio.play();
+            musicBtn.innerText = '⏸️ Пауза';
+            musicBtn.classList.add('pulse-animation');
+        } else {
+            audio.pause();
+            musicBtn.innerText = '🎵 Играть';
+            musicBtn.classList.remove('pulse-animation');
+        }
+    });
 
-        historyList.innerHTML = '';
-        entries.forEach(entry => {
-            const item = document.createElement('div');
-            item.className = 'entry-item';
-            item.innerHTML = `
-                <div class="entry-header">
-                    <h3>${escapeHtml(entry.title)}</h3>
-                    <button class="delete-btn" data-id="${entry._id}">×</button>
-                </div>
-                <p class="date">${formatDate(entry.createdAt || entry.date || '')}</p>
-                <p class="content">${escapeHtml(entry.content).replace(/\n/g, '<br>')}</p>
-                <div class="mood-indicator mood-${entry.mood.toLowerCase()}"></div>
-            `;
-            historyList.appendChild(item);
+    // Смена встроенных звуков
+    if (soundSelect) {
+        soundSelect.addEventListener('change', () => {
+            audio.src = soundSelect.value;
+            if (!audio.paused) audio.play();
         });
+    }
 
-        // Добавляем обработчики удаления
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', deleteEntry);
+    // Загрузка файла с компьютера
+    if (localUpload) {
+        localUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                audio.src = URL.createObjectURL(file);
+                audio.play();
+                musicBtn.innerText = '⏸️ Пауза';
+                musicBtn.classList.add('pulse-animation');
+            }
         });
-    } catch (error) {
-        historyList.innerHTML = '<p>Ошибка загрузки. Проверь интернет.</p>';
-        console.error(error);
+    }
+
+    // Ссылка из интернета (.mp3)
+    if (remoteUrlInput) {
+        remoteUrlInput.addEventListener('change', (e) => {
+            const url = e.target.value.trim();
+            if (url) {
+                audio.src = url;
+                audio.play()
+                    .then(() => {
+                        musicBtn.innerText = '⏸️ Пауза';
+                        musicBtn.classList.add('pulse-animation');
+                    })
+                    .catch(() => alert("Не удалось проиграть ссылку. Проверь, что это прямой путь к .mp3"));
+            }
+        });
+    }
+
+    // Громкость
+    if (volumeControl) {
+        volumeControl.addEventListener('input', (e) => {
+            audio.volume = e.target.value;
+        });
     }
 }
 
-// Добавление новой записи
-async function addEntry() {
-    const title = titleInput.value.trim();
-    const content = contentInput.value.trim();
-    const mood = moodSelect.value;
+// 5. Обработка формы создания записи
+const diaryForm = document.getElementById('diary-form');
+if (diaryForm) {
+    diaryForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const postData = {
+            title: document.getElementById('title').value,
+            mood: document.getElementById('mood').value,
+            content: document.getElementById('content').value
+        };
 
-    if (!title || !content) {
-        alert('Заполни заголовок и текст!');
-        return;
-    }
-
-    const newEntry = {
-        title,
-        content,
-        mood,
-        createdAt: new Date().toISOString()
-    };
-
-    try {
-        const response = await fetch(API_URL, {
+        await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newEntry)
+            body: JSON.stringify(postData)
         });
 
-        if (!response.ok) throw new Error('Ошибка сохранения');
-
-        const savedEntry = await response.json();
-        entries.unshift(savedEntry);
-        renderEntries();
-
-        // Очистка формы
-        titleInput.value = '';
-        contentInput.value = '';
-        moodSelect.value = 'радостное';
-
-        // Уведомление
-        showNotification('Запись сохранена! 🧠', 'Твои мысли теперь в MindSpace навсегда.');
-
-    } catch (error) {
-        alert('Не удалось сохранить. Проверь интернет.');
-        console.error(error);
-    }
-}
-
-// Удаление записи
-async function deleteEntry(event) {
-    const id = event.target.dataset.id;
-    if (!id || !confirm('Удалить эту запись?')) return;
-
-    try {
-        const response = await fetch(`${API_URL}?id=${id}`, {
-            method: 'DELETE'
-        });
-
-        if (!response.ok) throw new Error('Ошибка удаления');
-
-        entries = entries.filter(entry => entry._id !== id);
-        renderEntries();
-    } catch (error) {
-        alert('Не удалось удалить.');
-        console.error(error);
-    }
-}
-
-// Перерисовка списка (для обновления после удаления/добавления)
-function renderEntries() {
-    historyList.innerHTML = '';
-    if (entries.length === 0) {
-        historyList.innerHTML = '<p>Пока нет записей.</p>';
-        return;
-    }
-
-    entries.forEach(entry => {
-        const item = document.createElement('div');
-        item.className = 'entry-item';
-        item.innerHTML = `
-            <div class="entry-header">
-                <h3>${escapeHtml(entry.title)}</h3>
-                <button class="delete-btn" data-id="${entry._id}">×</button>
-            </div>
-            <p class="date">${formatDate(entry.createdAt || entry.date || '')}</p>
-            <p class="content">${escapeHtml(entry.content).replace(/\n/g, '<br>')}</p>
-            <div class="mood-indicator mood-${entry.mood.toLowerCase()}"></div>
-        `;
-        historyList.appendChild(item);
-    });
-
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', deleteEntry);
+        diaryForm.reset();
+        loadHistory();
     });
 }
 
-// Уведомления
-function showNotification(title, body = '') {
-    if (Notification.permission === 'granted') {
-        new Notification(title, {
-            body,
-            icon: '/icons/icon-192.png'
-        });
-    }
-}
-
-async function requestNotificationPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-        await Notification.requestPermission();
-    }
-}
-
-// Регистрация Service Worker для PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW зарегистрирован:', reg))
-            .catch(err => console.log('SW ошибка:', err));
-    });
-}
-
-// Запуск
-document.addEventListener('DOMContentLoaded', () => {
-    requestNotificationPermission();
-    loadHistory();
-    addBtn.addEventListener('click', addEntry);
-});
+// Запуск истории при загрузке страницы
+loadHistory();
